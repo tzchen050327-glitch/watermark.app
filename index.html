@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#111111" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="浮水印工具" />
+  <link rel="manifest" href="manifest.json" />
+  <title>批量浮水印工具</title>
+  <style>
+    :root{--bg:#101114;--panel:#1b1b1d;--panel2:#242426;--line:#36363a;--text:#f4f4f5;--muted:#a6a6ad;--gold:#d9a441;--gold2:#ffe88a;--danger:#ff6b6b;--slider:#d9a441;}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,"Noto Sans TC",sans-serif;min-height:100vh;padding:env(safe-area-inset-top) 18px 28px}
+    .app{max-width:820px;margin:0 auto;padding-top:28px}
+    h1{font-size:38px;margin:26px 0 24px;font-weight:900;letter-spacing:.5px}
+    .panel,.previewWrap{background:var(--panel);border:1px solid var(--line);border-radius:28px;padding:22px;margin-bottom:22px;box-shadow:0 18px 40px rgba(0,0,0,.22)}
+    label{display:block;color:var(--muted);font-size:18px;margin:18px 0 8px}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+    input[type=text],input[type=file],select,button{width:100%;border-radius:16px;border:1px solid #444;background:#0f1012;color:var(--text);font-size:18px;padding:15px 16px;outline:none}
+    input[type=file]{background:transparent;border:none;padding-left:0}
+    button{background:linear-gradient(105deg,var(--gold),var(--gold2));color:#181818;font-weight:900;border:none;margin-top:20px;cursor:pointer}.secondary{background:#2a2a2c;color:#fff;border:1px solid #444}.danger{background:#3a2222;color:#ffd0d0;border:1px solid #653232}
+    .status{color:var(--muted);font-size:15px;line-height:1.7;margin-top:12px}.pill{display:inline-block;background:#0f1012;border:1px solid #3a3a3d;border-radius:999px;padding:8px 12px;margin:5px 6px 0 0;color:#cfcfd4;font-size:14px}.previewStage{position:relative;background:#050505;border:1px solid var(--line);border-radius:22px;overflow:hidden;min-height:260px;display:flex;align-items:center;justify-content:center}.previewStage img{max-width:100%;display:block}.empty{color:#777;padding:70px 20px;text-align:center}.wmOverlay{position:absolute;left:70%;top:78%;font-weight:900;cursor:grab;user-select:none;white-space:nowrap;text-shadow:0 2px 8px rgba(0,0,0,.9);transform-origin:center center}.wmOverlay:active{cursor:grabbing}.actions{display:grid;grid-template-columns:1fr 1fr;gap:14px}.small{font-size:14px;color:#888}.fileList{max-height:140px;overflow:auto;border:1px solid #333;border-radius:14px;padding:10px;margin-top:12px;background:#121214}.fileItem{font-size:14px;color:#bbb;padding:4px 0;border-bottom:1px solid #242426}.fileItem:last-child{border-bottom:none}
+    .control{background:#121214;border:1px solid #333;border-radius:18px;padding:14px 14px 16px;margin-top:12px}.controlTop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}.controlName{color:#cfcfd4;font-size:16px;font-weight:700}.controlValue{min-width:72px;text-align:right;color:#fff;background:#0b0c0e;border:1px solid #333;border-radius:999px;padding:6px 10px;font-size:14px}.slider{width:100%;appearance:none;-webkit-appearance:none;height:8px;border-radius:999px;outline:none;background:linear-gradient(90deg,var(--slider) var(--pct,50%),#333 var(--pct,50%));padding:0;border:none}.slider::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:25px;height:25px;border-radius:50%;background:#fff;border:3px solid var(--slider);box-shadow:0 4px 14px rgba(0,0,0,.45);cursor:pointer}.slider::-moz-range-thumb{width:25px;height:25px;border-radius:50%;background:#fff;border:3px solid var(--slider);box-shadow:0 4px 14px rgba(0,0,0,.45);cursor:pointer}.slider.hue{background:linear-gradient(90deg,red,#ff0,lime,cyan,blue,magenta,red)}.colorRow{display:flex;align-items:center;gap:10px}.colorDot{width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #333;background:#fff;flex:0 0 auto}.hiddenColor{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+    @media(max-width:640px){body{padding-left:14px;padding-right:14px}.app{padding-top:14px}h1{font-size:32px}.row,.row3,.actions{grid-template-columns:1fr}.panel,.previewWrap{border-radius:24px;padding:18px}input[type=text],select,button{font-size:17px}.control{padding:13px}.slider::-webkit-slider-thumb{width:29px;height:29px}.slider::-moz-range-thumb{width:29px;height:29px}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>批量浮水印工具</h1>
+
+    <section class="panel">
+      <label>上傳圖片，可多選</label>
+      <input type="file" id="images" accept="image/*" multiple />
+      <div id="fileInfo" class="status">尚未選擇圖片</div>
+      <div id="fileList" class="fileList" style="display:none"></div>
+
+      <label>預設浮水印</label>
+      <input id="defaultText" type="text" value="@_luc0612" />
+
+      <label>自訂浮水印，未輸入則使用預設</label>
+      <input id="customText" type="text" placeholder="留空使用預設浮水印" />
+
+      <div class="control">
+        <div class="controlTop"><div class="controlName">大小</div><div class="controlValue" id="fontSizeValue">48 px</div></div>
+        <input class="slider" id="fontSize" type="range" value="48" min="8" max="500" step="1" />
+      </div>
+
+      <div class="control">
+        <div class="controlTop"><div class="controlName">浮水印顏色</div><div class="colorRow"><div class="colorDot" id="wmColorDot"></div><div class="controlValue" id="wmHueValue">0°</div></div></div>
+        <input class="slider hue" id="wmHue" type="range" value="0" min="0" max="360" step="1" />
+      </div>
+
+      <div class="control">
+        <div class="controlTop"><div class="controlName">透明度</div><div class="controlValue" id="opacityValue">35%</div></div>
+        <input class="slider" id="opacity" type="range" value="0.35" min="0" max="1" step="0.01" />
+      </div>
+
+      <div class="control">
+        <div class="controlTop"><div class="controlName">旋轉角度</div><div class="controlValue" id="rotationValue">0°</div></div>
+        <input class="slider" id="rotation" type="range" value="0" min="-180" max="180" step="1" />
+      </div>
+
+      <div class="control">
+        <div class="controlTop"><div class="controlName">描邊粗細</div><div class="controlValue" id="strokeWidthValue">2 px</div></div>
+        <input class="slider" id="strokeWidth" type="range" value="2" min="0" max="40" step="1" />
+      </div>
+
+      <div class="control">
+        <div class="controlTop"><div class="controlName">描邊顏色</div><div class="colorRow"><div class="colorDot" id="strokeColorDot"></div><div class="controlValue" id="strokeHueValue">0°</div></div></div>
+        <input class="slider hue" id="strokeHue" type="range" value="0" min="0" max="360" step="1" />
+      </div>
+
+      <div class="control">
+        <div class="controlTop"><div class="controlName">陰影模糊</div><div class="controlValue" id="shadowBlurValue">8 px</div></div>
+        <input class="slider" id="shadowBlur" type="range" value="8" min="0" max="80" step="1" />
+      </div>
+
+      <div class="control">
+        <div class="controlTop"><div class="controlName">陰影顏色</div><div class="colorRow"><div class="colorDot" id="shadowColorDot"></div><div class="controlValue" id="shadowHueValue">0°</div></div></div>
+        <input class="slider hue" id="shadowHue" type="range" value="0" min="0" max="360" step="1" />
+      </div>
+
+      <label>圖片 Logo 浮水印，可不選</label>
+      <input type="file" id="logoInput" accept="image/*" />
+
+      <div class="control">
+        <div class="controlTop"><div class="controlName">Logo 寬度比例</div><div class="controlValue" id="logoScaleValue">18%</div></div>
+        <input class="slider" id="logoScale" type="range" value="18" min="1" max="100" step="1" />
+      </div>
+
+      <label>浮水印類型</label>
+      <select id="wmType"><option value="text">文字</option><option value="logo">Logo 圖片</option></select>
+
+      <label>浮水印位置</label>
+      <select id="position">
+        <option value="bottom-right">右下</option>
+        <option value="bottom-left">左下</option>
+        <option value="top-right">右上</option>
+        <option value="top-left">左上</option>
+        <option value="custom">自訂拖曳</option>
+      </select>
+
+      <div class="actions">
+        <button class="secondary" id="resetPos">重設位置</button>
+        <button class="danger" id="clearSettings">清除設定</button>
+      </div>
+      <button id="downloadBtn">批量下載圖片</button>
+      <div class="status" id="statusText">會盡量維持原格式：PNG 進 PNG 出，其餘預設 JPG 出。手機瀏覽器可能要允許多檔下載。</div>
+    </section>
+
+    <section class="previewWrap">
+      <div class="previewStage" id="stage">
+        <div class="empty" id="empty">選擇圖片後會顯示第一張預覽</div>
+        <img id="preview" style="display:none" />
+        <div id="wmOverlay" class="wmOverlay">@_luc0612</div>
+        <img id="logoOverlay" class="wmOverlay" alt="logo preview" style="display:none;max-width:180px" />
+      </div>
+      <div class="status"><span class="pill">PWA 可安裝</span><span class="pill">本機處理</span><span class="pill">設定會自動記住</span></div>
+    </section>
+  </main>
+<script>
+const $=id=>document.getElementById(id);
+const keys=['defaultText','customText','fontSize','wmHue','opacity','rotation','strokeWidth','strokeHue','shadowBlur','shadowHue','logoScale','wmType','position'];
+const sliderIds=['fontSize','wmHue','opacity','rotation','strokeWidth','strokeHue','shadowBlur','shadowHue','logoScale'];
+let files=[],logoImg=null,customX=.82,customY=.88,dragging=false;
+function text(){return $('customText').value.trim()||$('defaultText').value.trim()||'@_luc0612'}
+function hsl(h){return `hsl(${h}, 100%, 62%)`}
+function wmColor(){return hsl(Number($('wmHue').value))}
+function strokeColor(){return hsl(Number($('strokeHue').value))}
+function shadowColor(){return hsl(Number($('shadowHue').value))}
+function save(){const data={};keys.forEach(k=>data[k]=$(k).value);data.customX=customX;data.customY=customY;localStorage.setItem('watermarkSettings',JSON.stringify(data))}
+function load(){try{const data=JSON.parse(localStorage.getItem('watermarkSettings')||'{}');keys.forEach(k=>{if(data[k]!==undefined)$(k).value=data[k]});if(data.customX!==undefined)customX=data.customX;if(data.customY!==undefined)customY=data.customY}catch(e){}}
+load();
+keys.forEach(k=>$(k).addEventListener('input',()=>{updatePreview();save()}));$('position').addEventListener('change',()=>{updatePreview();save()});
+sliderIds.forEach(id=>$(id).addEventListener('input',()=>updateSliderFill($(id))));
+$('images').addEventListener('change',e=>{files=[...e.target.files];renderFiles();if(files[0]){$('preview').src=URL.createObjectURL(files[0]);$('preview').style.display='block';$('empty').style.display='none'}updatePreview()});
+$('logoInput').addEventListener('change',async e=>{const f=e.target.files[0];logoImg=f?await loadImage(f):null;if(f){$('logoOverlay').src=URL.createObjectURL(f)}updatePreview()});
+$('preview').addEventListener('load',updatePreview);$('resetPos').onclick=()=>{customX=.82;customY=.88;updatePreview();save()};$('clearSettings').onclick=()=>{localStorage.removeItem('watermarkSettings');location.reload()};$('downloadBtn').onclick=downloadAll;
+function renderFiles(){ $('fileInfo').textContent=files.length?`已選擇 ${files.length} 張圖片`:'尚未選擇圖片'; const list=$('fileList'); list.style.display=files.length?'block':'none'; list.innerHTML=files.map(f=>`<div class="fileItem">${escapeHtml(f.name)}</div>`).join('') }
+function escapeHtml(s){return s.replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+function activeOverlay(){return $('wmType').value==='logo'&&logoImg?$('logoOverlay'):$('wmOverlay')}
+function updateSliderFill(el){const min=Number(el.min||0),max=Number(el.max||100),val=Number(el.value);const pct=((val-min)/(max-min))*100;el.style.setProperty('--pct',pct+'%')}
+function updateValues(){
+  $('fontSizeValue').textContent=`${$('fontSize').value} px`;$('opacityValue').textContent=`${Math.round(Number($('opacity').value)*100)}%`;$('rotationValue').textContent=`${$('rotation').value}°`;$('strokeWidthValue').textContent=`${$('strokeWidth').value} px`;$('shadowBlurValue').textContent=`${$('shadowBlur').value} px`;$('logoScaleValue').textContent=`${$('logoScale').value}%`;
+  $('wmHueValue').textContent=`${$('wmHue').value}°`;$('strokeHueValue').textContent=`${$('strokeHue').value}°`;$('shadowHueValue').textContent=`${$('shadowHue').value}°`;
+  $('wmColorDot').style.background=wmColor();$('strokeColorDot').style.background=strokeColor();$('shadowColorDot').style.background=shadowColor();sliderIds.forEach(id=>updateSliderFill($(id)));
+}
+function updatePreview(){updateValues();const wm=$('wmOverlay'),logo=$('logoOverlay'),type=$('wmType').value;wm.textContent=text();wm.style.color=wmColor();wm.style.opacity=$('opacity').value;wm.style.fontSize=Math.max(10,Number($('fontSize').value)*.55)+'px';wm.style.webkitTextStroke=`${Math.max(0,Number($('strokeWidth').value)*.35)}px ${strokeColor()}`;wm.style.textShadow=`0 2px ${$('shadowBlur').value}px ${shadowColor()}`;logo.style.opacity=$('opacity').value;logo.style.width=$('logoScale').value+'%';wm.style.display=type==='text'||!logoImg?'block':'none';logo.style.display=type==='logo'&&logoImg?'block':'none';place(activeOverlay());}
+function place(el){const pos=$('position').value,p=24;[el.style.left,el.style.right,el.style.top,el.style.bottom]=['','','',''];el.style.transform=`rotate(${$('rotation').value}deg)`;if(pos==='custom'){el.style.left=(customX*$('stage').clientWidth)+'px';el.style.top=(customY*$('stage').clientHeight)+'px';return}if(pos.includes('top'))el.style.top=p+'px';if(pos.includes('bottom'))el.style.bottom=p+'px';if(pos.includes('left'))el.style.left=p+'px';if(pos.includes('right'))el.style.right=p+'px'}
+['wmOverlay','logoOverlay'].forEach(id=>{const el=$(id);el.addEventListener('pointerdown',e=>{if($('position').value!=='custom')return;dragging=true;el.setPointerCapture(e.pointerId)});el.addEventListener('pointermove',e=>{if(!dragging)return;const r=$('stage').getBoundingClientRect();customX=(e.clientX-r.left)/r.width;customY=(e.clientY-r.top)/r.height;updatePreview();save()});el.addEventListener('pointerup',()=>dragging=false)});
+async function downloadAll(){if(!files.length){alert('請先選擇圖片');return}if($('wmType').value==='logo'&&!logoImg){alert('請先選擇 Logo 圖片，或把類型改成文字');return}$('statusText').textContent='處理中，請勿關閉頁面...';for(let i=0;i<files.length;i++){const f=files[i],img=await loadImage(f),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');canvas.width=img.naturalWidth||img.width;canvas.height=img.naturalHeight||img.height;ctx.drawImage(img,0,0,canvas.width,canvas.height);if($('wmType').value==='logo'&&logoImg)drawLogo(ctx,canvas,logoImg);else drawText(ctx,canvas);const mime=f.type==='image/png'?'image/png':'image/jpeg';const ext=mime==='image/png'?'png':'jpg';const blob=await new Promise(r=>canvas.toBlob(r,mime,.95));download(blob,`${f.name.replace(/\.[^/.]+$/,'')}_wm.${ext}`);$('statusText').textContent=`已處理 ${i+1} / ${files.length}`;await delay(550)}$('statusText').textContent='完成。若手機阻擋多檔下載，請允許此網站下載多個檔案。'}
+function pos(canvas,w,h){const p=Math.round(canvas.width*.035),v=$('position').value;if(v==='custom')return [customX*canvas.width,customY*canvas.height];let x=p,y=p;if(v.includes('right'))x=canvas.width-w-p;if(v.includes('bottom'))y=canvas.height-h-p;return [x,y]}
+function drawText(ctx,canvas){const fs=Number($('fontSize').value),t=text();ctx.save();ctx.globalAlpha=Number($('opacity').value);ctx.font=`900 ${fs}px Arial, sans-serif`;ctx.textBaseline='top';ctx.fillStyle=wmColor();ctx.strokeStyle=strokeColor();ctx.lineWidth=Number($('strokeWidth').value);ctx.shadowColor=shadowColor();ctx.shadowBlur=Number($('shadowBlur').value);const m=ctx.measureText(t),w=m.width,h=fs,[x,y]=pos(canvas,w,h);ctx.translate(x+w/2,y+h/2);ctx.rotate(Number($('rotation').value)*Math.PI/180);if(Number($('strokeWidth').value)>0)ctx.strokeText(t,-w/2,-h/2);ctx.fillText(t,-w/2,-h/2);ctx.restore()}
+function drawLogo(ctx,canvas,img){const w=canvas.width*(Number($('logoScale').value)/100),h=w*((img.naturalHeight||img.height)/(img.naturalWidth||img.width));const [x,y]=pos(canvas,w,h);ctx.save();ctx.globalAlpha=Number($('opacity').value);ctx.translate(x+w/2,y+h/2);ctx.rotate(Number($('rotation').value)*Math.PI/180);ctx.drawImage(img,-w/2,-h/2,w,h);ctx.restore()}
+function loadImage(file){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>res(img);img.onerror=rej;img.src=URL.createObjectURL(file)})}
+function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}function delay(ms){return new Promise(r=>setTimeout(r,ms))}
+if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}))}
+updatePreview();
+</script>
+</body>
+</html>
